@@ -3,7 +3,8 @@ const app = express();
 const port = 3000;
 const mysql = require('mysql2');
 const TelegramBot = require('node-telegram-bot-api');
-
+const token = '6838397161:AAEibMIKUtWVhDwNib4W3wuf7bivcqvc_Fg';
+const bot = new TelegramBot(token, { polling: true });
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -88,8 +89,7 @@ app.post('/updateItem', (req, res) => {
 });
 
 
-const token = '6292582336:AAHkYmAIL1Tn5lPr0N_Q9dV6srA2CpD9SyI';
-const bot = new TelegramBot(token, { polling: true });
+
 
 
 bot.onText(/\/start/, (msg) => {
@@ -303,6 +303,72 @@ bot.onText(/^\/webscr (.+)$/, async (msg, match) => {
     bot.sendMessage(chatId, 'Произошла ошибка при создании скриншота веб-страницы.');
   }
 });
+
+
+
+
+
+function updateUserLastMessage(userId) {
+  const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' '); 
+  const sql = `INSERT INTO Users (ID, lastMessage) VALUES (${userId}, '${currentDate}') ON DUPLICATE KEY UPDATE lastMessage='${currentDate}'`;
+
+  connection.query(sql, (err, result) => {
+    if (err) {
+      console.error('Ошибка выполнения запроса к базе данных:', err);
+      throw err;
+    }
+    console.log('Запись успешно обновлена (или добавлена)');
+  });
+}
+
+
+bot.on('message', (msg) => {
+  const userId = msg.from.id;
+  console.log('ID пользователя:', userId); 
+  updateUserLastMessage(userId);
+});
+
+
+
+
+const { setIntervalAsync } = require('set-interval-async');
+
+async function checkLastMessagesAndSendRandomItem() {
+  try {
+    console.log('Проверка последних сообщений пользователей...');
+    const currentDate = new Date();
+    const twoDaysAgo = new Date(currentDate.getTime() - 60 * 1000); 
+    const formattedDate = twoDaysAgo.toISOString().slice(0, 19).replace('T', ' '); 
+
+    const sql = `SELECT ID FROM Users WHERE lastMessage <= '${formattedDate}'`;
+    connection.query(sql, (err, results, fields) => {
+      if (err) {
+        console.error('Ошибка выполнения запроса к базе данных:', err);
+        return;
+      }
+
+      console.log('Результаты запроса:', results); 
+
+      if (results.length > 0) {
+        console.log('Есть пользователи, которым нужно отправить "randomItem"');
+        results.forEach((user) => {
+          // Отправка "randomItem" пользователю
+          const userId = user.ID;
+          console.log('Отправка сообщения пользователю с ID:', userId);
+          bot.sendMessage(userId, 'Ты мой рыбов :3');
+        });
+      } else {
+        console.log('Нет пользователей, которым нужно отправить "randomItem"');
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при проверке даты последнего сообщения пользователей:', error);
+  }
+}
+
+
+// Создание таймера, который будет срабатывать каждые 30 секунд
+setIntervalAsync(checkLastMessagesAndSendRandomItem, 10 * 1000); 
 
 
 app.listen(port, () => {
