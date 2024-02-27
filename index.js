@@ -3,6 +3,7 @@ const app = express();
 const port = 3000;
 const mysql = require('mysql2');
 const TelegramBot = require('node-telegram-bot-api');
+const translate = require('translate-google');
 const token = '6838397161:AAEibMIKUtWVhDwNib4W3wuf7bivcqvc_Fg';
 const bot = new TelegramBot(token, { polling: true });
 
@@ -105,7 +106,8 @@ bot.onText(/\/help/, (msg) => {
 /help - Выводит список команд с описанием
 /site - Отправляет ссылку на моего создателя
 /creator - Отправляет информацию о моём создателе
-/price - Цены на различные услуги
+/translateRu - Перевод текста на Русский (напишите команду и текст который вы хотели бы перевести)
+/translateEng - Перевод текста на Английский (напишите команду и текст который вы хотели бы перевести)
 `;
   bot.sendMessage(chatId, message);
 });
@@ -124,29 +126,39 @@ bot.onText(/\/creator/, (msg) => {
 });
 
 
-bot.onText(/\/price/, (msg) => {
+bot.onText(/\/translateRu (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  const message = `
-----------------------------------------------------------------------------------------  
-1. Лайк - 300 рублей
-2. Лайк + Комментарий - 500 рублей
-3. Реклама в начале ролика - 65000 рублей
-4. Преролл для сайтов, серверов и т.п. - от 50000 рублей
-5. Заказной стрим (Ваша игра, ваш сервер, ваше время и т.п.) - от 30000р/1час
-6. Пиар на стриме - 10000рублей (большая аудитория за короткое время) (!)кроме каналов и майнкрафт серверов(!)
-7. Индивидуальные предложения - Индивидуальная цена
-----------------------------------------------------------------------------------------
-Услуги:
-1. Друг на час (Общение с вами в ВК/Скайпе как с другом) - 25000р/час
-2. Поиграть с вами - 40000р/час + копия игры, если у меня её нет
-3. Ответы на ваши вопросы в течении 20мин в ВК - 10000р
-4. Консультация (Что нужно делать для того чтобы стать популярным) - 30000р
-5. Добавить в друзья в ВК - 2000 рублей
-----------------------------------------------------------------------------------------
-Вернуться назад - /help
-----------------------------------------------------------------------------------------
-`;
-  bot.sendMessage(chatId, message);
+  const text = match[1];
+  
+  if (!text) {
+    bot.sendMessage(chatId, 'Пожалуйста, введите команду в формате "/translateRu {текст}" для перевода на Русский.');
+    return;
+  }
+  try {
+      const translatedText = await translate(text, { to: 'ru' }); // Переводим на русский
+      bot.sendMessage(chatId, `Перевод на Русский: ${translatedText}`);
+  } catch (error) {
+      console.error('Ошибка при переводе текста:', error);
+      bot.sendMessage(chatId, 'Произошла ошибка при переводе текста.');
+  }
+});
+
+
+bot.onText(/\/translateEng (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const text = match[1];
+  
+  if (!text) {
+    bot.sendMessage(chatId, 'Пожалуйста, введите команду в формате "/translateEng {текст}" для перевода на Английский.');
+    return;
+  }
+  try {
+      const translatedText = await translate(text, { to: 'en' }); // Переводим на русский
+      bot.sendMessage(chatId, `Перевод на Английский: ${translatedText}`);
+  } catch (error) {
+      console.error('Ошибка при переводе текста:', error);
+      bot.sendMessage(chatId, 'Произошла ошибка при переводе текста.');
+  }
 });
 
 
@@ -381,7 +393,7 @@ async function checkLastMessagesAndSendRandomItem() {
           // Отправка "randomItem" пользователю
           const userId = user.ID;
           console.log('Отправка сообщения пользователю с ID:', userId);
-          bot.sendMessage(userId, 'Рекомендую написать команду /price чтобы ознакомиться с ценами на мои услуги :3');
+          bot.sendMessage(userId, 'Если вам понадобиться перевод то напишите команду /translate и текст который вы бы хотели перевести на русский');
         });
       } else {
         console.log('Нет пользователей, которым нужно отправить "randomItem"');
@@ -395,6 +407,7 @@ async function checkLastMessagesAndSendRandomItem() {
 
 // Создание таймера, который будет срабатывать каждые 30 секунд
 setIntervalAsync(checkLastMessagesAndSendRandomItem, 100000 * 1000); 
+
 
 
 app.listen(port, () => {
