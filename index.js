@@ -95,7 +95,7 @@ app.post('/updateItem', (req, res) => {
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Приветсвтую тебя, я бот для продажи ключей майнкрафт. Нажми "/help" для ознакомления с моим списком команд');
+  bot.sendMessage(chatId, 'Приветсвтую тебя, я бот для перевода текстов на Английский и Русский языки. Нажми "/help" для ознакомления с моим списком команд');
 });
 
 
@@ -407,6 +407,12 @@ async function checkLastMessagesAndSendRandomItem() {
 
 // Создание таймера, который будет срабатывать каждые 30 секунд
 setIntervalAsync(checkLastMessagesAndSendRandomItem, 100000 * 1000); 
+
+
+
+
+
+
 
 
 
